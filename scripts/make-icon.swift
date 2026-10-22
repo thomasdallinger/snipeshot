@@ -1,5 +1,5 @@
 // Renders the app icon (1024×1024 PNG). Usage: swift scripts/make-icon.swift <out.png>
-// A reticle aimed at a single pixel: precise capture, nothing else.
+// A capture area with a crosshair aimed at a single pixel: precise capture, nothing else.
 import AppKit
 
 let size: CGFloat = 1024
@@ -37,18 +37,18 @@ let white = rgb(0xFFFFFF)
 ctx.setStrokeColor(white)
 ctx.setFillColor(white)
 
-// Ring.
-let ringRadius: CGFloat = 250
+// The capture area: a landscape rectangle, like a selection on screen.
+let area = CGRect(x: center.x - 270, y: center.y - 200, width: 540, height: 400)
 ctx.setLineWidth(34)
-ctx.strokeEllipse(in: CGRect(x: center.x - ringRadius, y: center.y - ringRadius, width: ringRadius * 2, height: ringRadius * 2))
+ctx.setLineJoin(.miter)
+ctx.stroke(area)
 
-// Four ticks crossing the ring, stopping short of the centre.
-ctx.setLineWidth(34)
+// Crosshair ticks crossing each edge at its midpoint, stopping short of the centre.
 ctx.setLineCap(.butt)
-let outer: CGFloat = 330, inner: CGFloat = 120
-for (dx, dy) in [(0.0, 1.0), (0.0, -1.0), (1.0, 0.0), (-1.0, 0.0)] {
+let inner: CGFloat = 110, overshoot: CGFloat = 70
+for (dx, dy, edge) in [(0.0, 1.0, area.height / 2), (0.0, -1.0, area.height / 2), (1.0, 0.0, area.width / 2), (-1.0, 0.0, area.width / 2)] {
     ctx.move(to: CGPoint(x: center.x + dx * inner, y: center.y + dy * inner))
-    ctx.addLine(to: CGPoint(x: center.x + dx * outer, y: center.y + dy * outer))
+    ctx.addLine(to: CGPoint(x: center.x + dx * (edge + overshoot), y: center.y + dy * (edge + overshoot)))
 }
 ctx.strokePath()
 
