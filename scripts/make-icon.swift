@@ -1,5 +1,5 @@
 // Renders the app icon (1024×1024 PNG). Usage: swift scripts/make-icon.swift <out.png>
-// A capture area with a crosshair aimed at a single pixel: precise capture, nothing else.
+// Corner brackets marking a square capture area, with a small crosshair on the pixel in the middle.
 import AppKit
 
 let size: CGFloat = 1024
@@ -37,23 +37,28 @@ let white = rgb(0xFFFFFF)
 ctx.setStrokeColor(white)
 ctx.setFillColor(white)
 
-// The capture area: a landscape rectangle, like a selection on screen.
-let area = CGRect(x: center.x - 270, y: center.y - 200, width: 540, height: 400)
-ctx.setLineWidth(34)
-ctx.setLineJoin(.miter)
-ctx.stroke(area)
-
-// Crosshair ticks crossing each edge at its midpoint, stopping short of the centre.
+// Corner brackets of a square selection.
+let half: CGFloat = 270, arm: CGFloat = 150
+ctx.setLineWidth(36)
 ctx.setLineCap(.butt)
-let inner: CGFloat = 110, overshoot: CGFloat = 70
-for (dx, dy, edge) in [(0.0, 1.0, area.height / 2), (0.0, -1.0, area.height / 2), (1.0, 0.0, area.width / 2), (-1.0, 0.0, area.width / 2)] {
-    ctx.move(to: CGPoint(x: center.x + dx * inner, y: center.y + dy * inner))
-    ctx.addLine(to: CGPoint(x: center.x + dx * (edge + overshoot), y: center.y + dy * (edge + overshoot)))
+ctx.setLineJoin(.miter)
+for (sx, sy) in [(-1.0, -1.0), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)] {
+    let corner = CGPoint(x: center.x + sx * half, y: center.y + sy * half)
+    ctx.move(to: CGPoint(x: corner.x - sx * arm, y: corner.y))
+    ctx.addLine(to: corner)
+    ctx.addLine(to: CGPoint(x: corner.x, y: corner.y - sy * arm))
 }
 ctx.strokePath()
 
+// Small crosshair in the middle.
+let reach: CGFloat = 100
+ctx.setLineWidth(22)
+ctx.move(to: CGPoint(x: center.x - reach, y: center.y)); ctx.addLine(to: CGPoint(x: center.x + reach, y: center.y))
+ctx.move(to: CGPoint(x: center.x, y: center.y - reach)); ctx.addLine(to: CGPoint(x: center.x, y: center.y + reach))
+ctx.strokePath()
+
 // The pixel being aimed at.
-let pixel: CGFloat = 64
+let pixel: CGFloat = 56
 ctx.fill(CGRect(x: center.x - pixel / 2, y: center.y - pixel / 2, width: pixel, height: pixel))
 ctx.restoreGState()
 
