@@ -65,7 +65,7 @@ cream + terracotta · forced dark mode.
   each row a small thumbnail, the time and the pixel size) · header (tools on the left, undo/redo and
   Copy on the right) · canvas · inspector (Style, Text, Redaction, Backdrop, contextual to the tool or
   selection) · status bar (size, save state, zoom).
-- **Shelf:** one card per capture, stacked in the bottom-left corner of the screen you captured on.
+- **Shelf:** one card per capture, stacked in the bottom-left corner of the screen the pointer is on.
   Plain thumbnail with a hairline edge. On hover a slim bar appears along the bottom with icon buttons
   (copy, edit, pin, show in Finder, delete) and a close button in the corner. Drag the card itself to
   share it.

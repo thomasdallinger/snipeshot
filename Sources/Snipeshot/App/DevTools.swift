@@ -26,7 +26,7 @@ enum DevTools {
     static func handleLaunchArguments(_ app: AppDelegate) -> Bool {
         let args = CommandLine.arguments
         if args.contains("--self-test") {
-            exit(SelfTest.run(blocked: app.blockedShortcuts))
+            exit(SelfTest.run(app))
         }
         if let i = args.firstIndex(of: "--simulate-capture"), args.indices.contains(i + 1) {
             if let result = loadImage(args[i + 1]) { app.didGrab(result) }

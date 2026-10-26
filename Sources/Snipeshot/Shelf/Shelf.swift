@@ -40,6 +40,8 @@ final class ShelfController {
     private let model = ShelfModel()
     private var panel: NSPanel?
     private var anchorFrame: CGRect?
+    /// Moves the shelf to the screen the pointer is on while the shelf is visible.
+    private var followTimer: Timer?
 
     static let maxItems = 5
     private let margin: CGFloat = 16
@@ -55,11 +57,17 @@ final class ShelfController {
 
     var itemURLs: [URL] { model.items.map(\.url) }
     var debugPanel: NSPanel? { panel }
+    /// Lets the self-test pretend the shelf sits on another screen.
+    var debugAnchorFrame: CGRect? {
+        get { anchorFrame }
+        set {
+            anchorFrame = newValue
+            layoutPanel()
+        }
+    }
 
     func show(url: URL, pixelSize: CGSize) {
-        let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main ?? NSScreen.screens[0]
-        if model.items.isEmpty || anchorFrame != screen.visibleFrame { anchorFrame = screen.visibleFrame }
+        anchorFrame = Self.screenUnderPointer.visibleFrame
         let item = ShelfItem(url: url, pixelSize: pixelSize)
         previews.preview(for: url, modDate: Date()) { [weak item] in item?.preview = $0 }
         withAnimation(Motion.standard) {
@@ -69,6 +77,37 @@ final class ShelfController {
         ensurePanel()
         layoutPanel()
         panel?.orderFrontRegardless()
+        startFollowingPointer()
+    }
+
+    private static var screenUnderPointer: NSScreen {
+        let mouse = NSEvent.mouseLocation
+        return NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
+    }
+
+    private func startFollowingPointer() {
+        guard followTimer == nil else { return }
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+            self?.followPointer(buttonsDown: NSEvent.pressedMouseButtons != 0)
+        }
+        timer.tolerance = 0.1
+        RunLoop.main.add(timer, forMode: .common)
+        followTimer = timer
+    }
+
+    private func stopFollowingPointer() {
+        followTimer?.invalidate()
+        followTimer = nil
+    }
+
+    /// Also picks up a changed Dock or display arrangement on the same screen.
+    func followPointer(buttonsDown: Bool) {
+        // Never move while a button is down: a card may be on its way to another screen.
+        guard !buttonsDown else { return }
+        let frame = Self.screenUnderPointer.visibleFrame
+        guard frame != anchorFrame else { return }
+        anchorFrame = frame
+        layoutPanel()
     }
 
     func remove(_ url: URL) {
@@ -121,6 +160,7 @@ final class ShelfController {
         guard let panel else { return }
         if model.items.isEmpty {
             panel.orderOut(nil)
+            stopFollowingPointer()
             return
         }
         let screen = anchorFrame ?? NSScreen.main?.visibleFrame ?? .zero

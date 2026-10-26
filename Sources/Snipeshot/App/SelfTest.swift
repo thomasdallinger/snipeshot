@@ -11,11 +11,13 @@ enum SelfTest {
         if !condition { failures += 1 }
     }
 
-    static func run(blocked: Set<CaptureKind>) -> Int32 {
+    static func run(_ app: AppDelegate) -> Int32 {
         editFileFormat()
         keyCombos()
         canvasTools()
         dragFile()
+        shelfFollowsPointer(app.shelf)
+        let blocked = app.blockedShortcuts
         print("INFO  shortcuts held by another app: \(blocked.isEmpty ? "none" : blocked.map(\.rawValue).sorted().joined(separator: ", "))")
         print(failures == 0 ? "ALL PASSED" : "\(failures) FAILED")
         return failures == 0 ? 0 : 1
@@ -128,6 +130,27 @@ enum SelfTest {
         doc.saveNow()
         let reloaded = MarkupDocument.load(url: url)
         check("edits survive a reload", reloaded?.annotations == doc.annotations && reloaded?.crop == doc.crop && reloaded?.backdrop == doc.backdrop)
+    }
+
+    /// The shelf moves to the screen under the pointer, but never in the middle of a drag.
+    private static func shelfFollowsPointer(_ shelf: ShelfController) {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("selftest-shelf.png")
+        defer { shelf.remove(url) }
+        shelf.show(url: url, pixelSize: CGSize(width: 800, height: 600))
+        let mouse = NSEvent.mouseLocation
+        guard let here = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) })?.visibleFrame,
+              let panel = shelf.debugPanel else { return check("shelf appears", false) }
+        check("shelf opens on the screen under the pointer", here.contains(panel.frame.insetBy(dx: 18, dy: 18)), "\(panel.frame)")
+
+        let elsewhere = CGRect(x: here.maxX + 500, y: here.minY, width: 1920, height: 1080)
+        shelf.debugAnchorFrame = elsewhere
+        shelf.followPointer(buttonsDown: true)
+        check("shelf stays put while a button is down", shelf.debugAnchorFrame == elsewhere && panel.frame.minX == elsewhere.minX + 16 - 18,
+              "\(panel.frame)")
+        shelf.followPointer(buttonsDown: false)
+        check("shelf follows the pointer to its screen", shelf.debugAnchorFrame == here && here.contains(panel.frame.insetBy(dx: 18, dy: 18)),
+              "\(panel.frame)")
+        check("shelf sits in the bottom-left corner", panel.frame.minX == here.minX + 16 - 18 && panel.frame.minY == here.minY + 16 - 18)
     }
 
     private static func dragFile() {
