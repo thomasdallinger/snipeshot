@@ -30,6 +30,11 @@ $BIN --snapshot-ui /tmp/ui any-image.png
 ./dist/Snipeshot.app/Contents/MacOS/Snipeshot --simulate-capture any-image.png
 ```
 
+## Capture sound
+
+`assets/sounds/capture.wav` is synthesized by `scripts/sounds.mjs` and played by both the macOS and the Windows
+app, so they sound the same. To change it, edit the voices in that script and run `node scripts/sounds.mjs`.
+
 ## Signing
 
 `scripts/setup-signing.sh` creates a self-signed "Local Code Signing" identity in its own keychain

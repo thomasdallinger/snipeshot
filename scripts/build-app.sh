@@ -31,6 +31,8 @@ if [[ ! -f "$ICNS" || scripts/make-icon.swift -nt "$ICNS" ]]; then
   iconutil -c icns "$ICONSET" -o "$ICNS"
 fi
 cp "$ICNS" "$APP/Contents/Resources/AppIcon.icns"
+# The capture sound is shared with the Windows app (made by scripts/sounds.mjs).
+cp assets/sounds/capture.wav "$APP/Contents/Resources/capture.wav"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

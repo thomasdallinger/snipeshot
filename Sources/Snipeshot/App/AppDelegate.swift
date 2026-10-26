@@ -19,9 +19,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var blockedShortcuts: Set<CaptureKind> = []
     private var appQuitObserver: NSObjectProtocol?
 
-    private lazy var captureSound = NSSound(
-        contentsOfFile: "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/Screen Capture.aif",
-        byReference: true)
+    /// `assets/sounds/capture.wav`, copied into the app by the build script. The Windows app plays the same file.
+    private lazy var captureSound = Bundle.main.url(forResource: "capture", withExtension: "wav")
+        .flatMap { NSSound(contentsOf: $0, byReference: true) }
 
     // MARK: - Lifecycle
 
