@@ -13,6 +13,7 @@
     "windows": [
       {
         "label": "library",
+        "create": false,
         "title": "Snipeshot",
         "url": "index.html#/library",
         "width": 1100,
@@ -24,6 +25,7 @@
       },
       {
         "label": "settings",
+        "create": false,
         "title": "Snipeshot Settings",
         "url": "index.html#/settings",
         "width": 560,

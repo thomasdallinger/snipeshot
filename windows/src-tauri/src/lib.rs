@@ -293,6 +293,12 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         tray_items: Mutex::new(Vec::new()),
     });
 
+    // Config windows are created here, after `manage`, so an early IPC call from their pages
+    // can't reach `state()` before AppState exists.
+    for config in app.config().app.windows.clone() {
+        tauri::WebviewWindowBuilder::from_config(&handle, &config)?.build()?;
+    }
+
     shortcuts::register(&handle);
     library::watch_save_folder(&handle);
     shelf::create_window(&handle)?;

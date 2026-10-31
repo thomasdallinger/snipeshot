@@ -51,7 +51,16 @@ The Windows app lives in [`windows/`](windows) (Tauri 2 + Svelte) and runs on Wi
 
 **You need:** [Rust](https://rustup.rs) (stable, with the MSVC toolchain and the Visual Studio Build Tools it
 asks for), [Node](https://nodejs.org) 22 or later and Git. The WebView2 runtime is part of Windows 11; on
-Windows 10 the installer fetches it if it is missing.
+Windows 10 the installer fetches it if it is missing. With winget:
+
+```powershell
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+winget install Rustlang.Rustup
+winget install OpenJS.NodeJS.LTS
+winget install Git.Git
+```
+
+Then, in a new terminal (so `cargo` is on your `PATH`):
 
 ```powershell
 git clone https://github.com/thomasdallinger/snipeshot.git
