@@ -19,7 +19,8 @@ they create.
 BIN=$(swift build --show-bin-path)/Snipeshot
 
 # Edit-file format, shortcut handling, every canvas tool driven by synthesized mouse events,
-# undo/redo, crop, backdrop export size, edits surviving a reload, and the file a drag hands out.
+# undo/redo, crop, backdrop export size, edits surviving a reload, the file a drag hands out,
+# the shelf following the pointer, and the selector surviving a freed session.
 $BIN --self-test
 
 # Renders the shelf card, library window, selector, settings and a flattened export into a folder,

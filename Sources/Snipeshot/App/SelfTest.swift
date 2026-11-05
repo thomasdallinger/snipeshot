@@ -17,10 +17,38 @@ enum SelfTest {
         canvasTools()
         dragFile()
         shelfFollowsPointer(app.shelf)
+        MainActor.assumeIsolated { selectorOutlivesSession() }
         let blocked = app.blockedShortcuts
         print("INFO  shortcuts held by another app: \(blocked.isEmpty ? "none" : blocked.map(\.rawValue).sorted().joined(separator: ", "))")
         print(failures == 0 ? "ALL PASSED" : "\(failures) FAILED")
         return failures == 0 ? 0 : 1
+    }
+
+    /// AppKit can still draw an overlay after the picker closed and its session is gone; that used to abort the app.
+    @MainActor
+    private static func selectorOutlivesSession() {
+        guard let screen = NSScreen.main else { return check("selector test has a screen", false) }
+        let image = CGContext(data: nil, width: 64, height: 64, bitsPerComponent: 8, bytesPerRow: 0,
+                              space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!.makeImage()!
+        let still = FrozenScreen(screen: screen, image: image, scale: 64 / screen.frame.width)
+        weak var gone: SelectionSession?
+        let window: SelectionOverlayWindow = {
+            let session = SelectionSession(mode: .window, screens: [still])
+            gone = session
+            return SelectionOverlayWindow(screen: still, session: session)
+        }()
+        check("selector session can be freed while its overlay lives on", gone == nil)
+        let view = window.overlay
+        // The window never goes on screen, so draw through a bitmap; display() alone would skip draw(_:).
+        if let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) { view.cacheDisplay(in: view.bounds, to: rep) }
+        let event = NSEvent.mouseEvent(with: .leftMouseUp, location: .zero, modifierFlags: [], timestamp: 0,
+                                       windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+        view.mouseDragged(with: event)
+        view.mouseUp(with: event)
+        view.rightMouseDown(with: event)
+        // A regression aborts the process at the draw/click above instead of printing FAIL.
+        check("selector survives drawing and clicks after its session is gone", true)
     }
 
     private static func editFileFormat() {

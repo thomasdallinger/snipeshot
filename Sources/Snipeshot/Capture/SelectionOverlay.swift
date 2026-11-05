@@ -109,7 +109,7 @@ final class SelectionSession {
         if let keyTap { NSEvent.removeMonitor(keyTap) }
         keyTap = nil
         NSCursor.pop()
-        for w in overlays { w.orderOut(nil) }
+        for w in overlays { w.close() }
         overlays.removeAll()
         if NSApp.windows.allSatisfy({ !$0.isVisible || $0 is NSPanel || !$0.canBecomeMain }) {
             previousApp?.activate()
@@ -141,7 +141,8 @@ final class SelectionOverlayWindow: NSWindow {
 /// Draws the frozen screen image, the selection, the loupe and the hint line for one display.
 final class SelectionOverlayView: NSView {
     private let screen: FrozenScreen
-    private unowned let session: SelectionSession
+    /// Weak: AppKit can still draw or click an overlay after the picker closed and the session is gone.
+    private weak var session: SelectionSession?
     private var cursor: CGPoint?
     private var anchor: CGPoint?
     private var current: CGPoint?
@@ -191,7 +192,7 @@ final class SelectionOverlayView: NSView {
     }
 
     private var hoveredWindow: CGRect? {
-        guard let p = cursor, let t = session.target(at: global(p)) else { return nil }
+        guard let p = cursor, let t = session?.target(at: global(p)) else { return nil }
         return local(t.frame).intersection(bounds)
     }
 
@@ -222,7 +223,7 @@ final class SelectionOverlayView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard session.mode == .area, let anchor else { return }
+        guard session?.mode == .area, let anchor else { return }
         let p = convert(event.locationInWindow, from: nil)
         cursor = p
         current = p
@@ -236,6 +237,7 @@ final class SelectionOverlayView: NSView {
             current = nil
             isDragging = false
         }
+        guard let session else { return }
         if session.mode == .area, let rect = selection {
             session.complete(localRect: rect, on: screen)
         } else if let rect = hoveredWindow {
@@ -245,7 +247,7 @@ final class SelectionOverlayView: NSView {
     }
 
     override func rightMouseDown(with event: NSEvent) {
-        session.finish(nil)
+        session?.finish(nil)
     }
 
     // MARK: Drawing
@@ -253,6 +255,7 @@ final class SelectionOverlayView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
         Renderer.drawFlipped(ctx, screen.image, in: bounds)
+        guard let session else { return }
         let dim = NSColor.black.withAlphaComponent(0.32).cgColor
 
         if let sel = selection {
@@ -275,7 +278,7 @@ final class SelectionOverlayView: NSView {
         if let p = cursor, session.mode == .area, !session.hideLoupe {
             drawLoupe(ctx, at: p)
         }
-        drawHints()
+        drawHints(mode: session.mode)
     }
 
     private func cutOut(_ ctx: CGContext, _ rect: CGRect, dim: CGColor) {
@@ -382,9 +385,9 @@ final class SelectionOverlayView: NSView {
     }
 
     /// One line of keycaps at the bottom of the display under the pointer.
-    private func drawHints() {
+    private func drawHints(mode: SelectionSession.Mode) {
         guard cursor != nil else { return }
-        let hints: [(String, String)] = session.mode == .area
+        let hints: [(String, String)] = mode == .area
             ? [("drag", "area"), ("click", "window"), ("space", "pick windows"), ("⌥", "no magnifier"), ("esc", "cancel")]
             : [("click", "window"), ("space", "draw an area"), ("esc", "cancel")]
         let keyFont = NSFont.systemFont(ofSize: 11, weight: .semibold)

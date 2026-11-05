@@ -3,7 +3,7 @@ import ImageIO
 
 /// Launch flags for development and verification (see docs/DEVELOPMENT.md):
 ///
-///   --self-test                  Logic checks: edit-file format, canvas tools, crop, export, drag file.
+///   --self-test                  Logic checks: edit-file format, canvas tools, crop, export, drag file, selector.
 ///   --simulate-capture <image>   Run the after-capture steps (save, clipboard, shelf) with an existing image.
 ///   --snapshot-ui <dir> <image>  Treat <image> as a capture, mark it up and render the shelf, library window,
 ///                                selector, settings and the flattened export into <dir>, then quit.
